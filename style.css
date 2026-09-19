@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Pacifico&display=swap');
-:root{
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Luckiest+Guy&display=swap');:root{
   --pink:#ff86aa; --pink2:#ffd7e3; --hot:#ff5f80; --red:#ff3e48;
   --yellow:#ffd94f; --blue:#42b6ff; --ink:#40333a; --paper:#fffdfd;
   --shadow:0 18px 40px rgba(130,55,85,.16);
@@ -8,9 +7,9 @@
 html{scroll-behavior:smooth}
 body{
   margin:0; color:var(--ink); font-family:"Baloo 2",system-ui,sans-serif;
-  background-color:#fff; background-image:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2282%22%20height%3D%2282%22%20viewBox%3D%220%200%2082%2082%22%3E%3Cpath%20d%3D%22M41%2052.5C36%2047.7%2023%2038.4%2023%2028.3c0-5.9%204.4-10.3%2010.1-10.3%203.2%200%206.2%201.6%207.9%204.2%201.7-2.6%204.7-4.2%207.9-4.2C53.6%2018%2058%2022.4%2058%2028.3c0%2010.1-13%2019.4-17%2024.2z%22%20fill%3D%22%23ff86aa%22%2F%3E%3C%2Fsvg%3E");
-  background-size:82px 82px;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cpath d='M41 52.5C36 47.7 23 38.4 23 28.3c0-5.9 4.4-10.3 10.1-10.3 3.2 0 6.2 1.6 7.9 4.2 1.7-2.6 4.7-4.2 7.9-4.2C53.6 18 58 22.4 58 28.3c0 10.1-13 19.4-17 24.2z' fill='%23ff86aa' transform='translate(6.3,8.4) scale(0.4)'/%3E%3Cpath d='M41 52.5C36 47.7 23 38.4 23 28.3c0-5.9 4.4-10.3 10.1-10.3 3.2 0 6.2 1.6 7.9 4.2 1.7-2.6 4.7-4.2 7.9-4.2C53.6 18 58 22.4 58 28.3c0 10.1-13 19.4-17 24.2z' fill='%23ff86aa' transform='translate(51.3,53.4) scale(0.4)'/%3E%3C/svg%3E");
+  background-size:110px 110px;
   background-repeat:repeat;
 }
 button,input{font:inherit}
@@ -107,8 +106,10 @@ button{cursor:pointer}
 }
 .praise{
   position:absolute;left:50%;top:45%;transform:translate(-50%,-50%) rotate(-5deg);
-  font-family:Pacifico,cursive;font-size:clamp(2.5rem,10vw,5rem);color:#ff617f;
-  text-shadow:4px 5px 0 #fff2dc,7px 8px 0 #ffb1bd;z-index:8;
+  font-family:"Luckiest Guy",cursive;font-size:clamp(2.5rem,10vw,5rem);color:#fff8ec;
+  text-shadow:3px 4px 0 #ff8a6b,5px 6px 0 #ff5f5f,7px 8px 12px rgba(0,0,0,.15);
+  -webkit-text-stroke:2px #ff5f5f;
+  z-index:8;
   pointer-events:none;animation:praiseIn .7s both
 }
 @keyframes praiseIn{0%{opacity:0;transform:translate(-50%,-20%) scale(.4) rotate(-15deg)}
@@ -127,12 +128,16 @@ button{cursor:pointer}
   min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
   text-align:center;position:relative
 }
-.end-title{font-family:Pacifico,cursive;font-size:clamp(4rem,14vw,8rem);color:#ff6689;
- text-shadow:6px 7px #fff0bd;animation:popTitle .8s both}
+.end-title{font-family:"Luckiest Guy",cursive;font-size:clamp(4rem,14vw,8rem);color:#fff8ec;
+ text-shadow:4px 5px 0 #ff8a6b,7px 8px 0 #ff5f5f;
+ -webkit-text-stroke:2px #ff5f5f;
+ animation:popTitle .8s both}
 @keyframes popTitle{0%{opacity:0;transform:scale(.2) rotate(-10deg)}75%{transform:scale(1.15)}100%{transform:scale(1)}}
 .end-screen p{font-size:1.25rem}.note-card{background:#fff;border:3px solid #ffd0dd;border-radius:30px;
  padding:35px;box-shadow:var(--shadow);max-width:600px}
-.note-card h1{font-family:Pacifico,cursive;color:#ff6689;font-size:clamp(3rem,10vw,5.5rem);margin:0}
+.note-card h1{font-family:"Luckiest Guy",cursive;color:#fff8ec;font-size:clamp(3rem,10vw,5.5rem);margin:0;
+ text-shadow:3px 4px 0 #ff8a6b,5px 6px 0 #ff5f5f;
+ -webkit-text-stroke:2px #ff5f5f}
 .note-card p{font-size:1.35rem;line-height:1.5}
 .note-card .heart{font-size:4rem}
 .note-page{
@@ -269,13 +274,14 @@ button{cursor:pointer}
   filter:drop-shadow(0 4px 5px rgba(75,40,50,.16));
 }
 .note-title{
+  .note-title{
   position:absolute;top:4%;left:50%;transform:translateX(-50%);
   z-index:5;text-align:center;white-space:nowrap;
-  font-family:"Pacifico",cursive;font-size:clamp(2rem,6vw,4.4rem);
-  color:#ff617f;
-  -webkit-text-stroke:5px #fff2d8;
+  font-family:"Luckiest Guy",cursive;font-size:clamp(2rem,6vw,4.4rem);
+  color:#fff8ec;
+  -webkit-text-stroke:2px #ff5f5f;
   paint-order:stroke fill;
-  text-shadow:6px 7px 0 #ff8b9b, 10px 12px 0 rgba(255,105,125,.22);
+  text-shadow:3px 4px 0 #ff8a6b,5px 6px 0 #ff5f5f;
   pointer-events:none;
 }
 @media(max-width:600px){
