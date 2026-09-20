@@ -339,7 +339,7 @@ function devFastForward(mode) {
     if (mode !== "review") {
       const c = sessionCards[i];
       runAnswered++;
-      if (Math.random() < 0.5) {
+      if (true) {
         runCorrect++;
       } else {
         const opts = c.auto ? autoChoices(c) : (c.choices || []);
@@ -627,7 +627,7 @@ function readyNo()  { document.getElementById("readyModal")?.remove(); goHome();
 //   below 71% → "Try again"      only Volver Volver plays, envelope locked
 function showExamResult() {
   const total = sessionCards.length, wrongN = runMistakes.length;
-  const pct = Math.floor((total - wrongN) / total * 100);
+  const pct = devMode ? 100 : Math.floor((total - wrongN) / total * 100);
   const kind = pct === 100 ? "win" : (pct >= 71 ? "close" : "cry");
   if (pct === 100) { progress.letterUnlocked = true; progress.challengeUnlocked = true; saveProgress(); }
   showNote(kind, pct);
