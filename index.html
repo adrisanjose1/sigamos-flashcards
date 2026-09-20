@@ -155,14 +155,17 @@ function esc(s) {
 function renderHome() {
   app.innerHTML = `
  <section class="hero">
-   ${renderCardFan("Sigamos", "big")}
-   <div class="hero-sub">Vamos Amore mio sigamos practicar</div>
-   <div class="mode-pick">
-     <button class="pick-word" onclick="start('review')" aria-label="Reseña">Reseña</button>
-     <span class="pick-o">o</span>
-     <button class="pick-word" onclick="start('quiz')" aria-label="Examen">examen</button><span class="pick-q">?</span>
+   <div class="hero-main">
+     ${renderCardFan("Sigamos", "big")}
+     <div class="hero-sub">Vamos Amore mio sigamos practicar</div>
+     <div class="mode-pick">
+       <button class="pick-word" onclick="start('review')" aria-label="Reseña">Reseña</button>
+       <span class="pick-o">o</span>
+       <button class="pick-word" onclick="start('quiz')" aria-label="Examen">examen</button><span class="pick-q">?</span>
+     </div>
+     ${mistakeData.done ? `<button class="mistakes-link" onclick="openMistakes()">Review all Your Mistakes?</button>` : ""}
    </div>
-   <div class="scroll-hint">↓ Baja para agregar más tarjetas y ajustar las animaciones</div>
+   <div class="scroll-hint">↓ Baja para agregar más tarjetas y more for you to see 😉</div>
  </section>
  <section class="controls" id="controls">
    <h2>Personaliza tu estudio 💕</h2>
@@ -248,7 +251,7 @@ function saveCard(id) {
 // Deletes a card after a confirm() prompt. Permanent — there is no undo.
 function deleteCard(id) {
   const c = cards.find(x => x.id === id); if (!c) return;
-  if (confirm(`¿Eliminar la tarjeta «${c.es}»?`)) { cards = cards.filter(x => x.id !== id); save(); renderHome(); }
+  if (confirm(`¿Eliminar la tarjeta «${c.es}»?`)) { cards = cards.filter(x => x.id !== id); mistakeData.list = mistakeData.list.filter(m => m.id !== id); saveMistakes(); save(); renderHome(); }
 }
 
 // Starts a study session. Shuffles a fresh copy of the deck so review
@@ -258,6 +261,7 @@ function start(mode) {
   currentMode = mode; currentIndex = 0; cycleIndex = 0;
   sessionCards = [...cards].sort(() => Math.random() - 0.5);
   wrong = false; flipped = false;
+  if (mode === "quiz") runMistakes = [];
   Sound.pageForward();
   renderStudy();
 }
@@ -292,21 +296,23 @@ function renderStudy(advancing) {
       <div class="deck-card ${backColor}"><div class="mini-inner" style="background-image:url('${next2.image}');background-size:72% 72%;background-repeat:no-repeat;background-position:center;"></div></div>
       <div class="deck-card ${midColor}"><div class="mini-inner" style="background-image:url('${next.image}');background-size:72% 72%;background-repeat:no-repeat;background-position:center;"></div></div>
       <div class="deck-card current ${frontColor}">
-       <div class="face front"><img src="${c.image}" alt="${esc(c.es)}"><div class="label">${currentMode === "review" ? "Toca para ver la respuesta" : "Elige una respuesta"}</div><div class="tap-note">♥ señal ${currentIndex + 1}</div></div>
-       <div class="face back"><img src="${c.image}" alt=""><div class="label">${esc(c.es)}</div><div class="translation">${esc(c.en)}</div></div>
+       ${currentMode === "review"
+         /* Reseña: one solid face showing the sign + Spanish + English. It never turns. */
+         ? `<div class="face front"><img src="${c.image}" alt="${esc(c.es)}"><div class="label">${esc(c.es)}</div><div class="translation">${esc(c.en)}</div><div class="tap-note">♥ señal ${currentIndex + 1}</div></div>`
+         /* Examen: front = sign only; the back (answer) is only turned over after a mistake. */
+         : `<div class="face front"><img src="${c.image}" alt=""><div class="label">Elige una respuesta</div><div class="tap-note">♥ señal ${currentIndex + 1}</div></div>
+       <div class="face back"><img src="${c.image}" alt=""><div class="label">${esc(c.es)}</div><div class="translation">${esc(c.en)}</div></div>`}
       </div>
     </div>
    </div>
    ${currentMode === "review"
       ? `<div class="control-row"><button class="continue" onclick="nextReview()">Siguiente ♥</button></div>`
       : `<div class="quiz-options">${opts.map((o, i) => `<button class="option" data-value="${esc(o)}" onclick="answerQuiz(this,'${encodeURIComponent(o)}')">${String.fromCharCode(65 + i)}. ${esc(o)}</button>`).join("")}</div><div id="continueArea"></div>`}
-   <div class="tap-note">${currentMode === "review" ? "Toca la tarjeta para voltearla." : "Toca una de las cuatro respuestas."}</div>
+   ${currentMode === "review" ? "" : `<div class="tap-note">Toca una de las cuatro respuestas.</div>`}
   </div>
   <div id="burst" class="burst"></div>
  </section>`;
 
-  const top = document.querySelector(".deck-card.current");
-  top.onclick = () => { if (!wrong) { top.classList.toggle("flipped"); playClick(); } };
   if (advancing) animateDeckAdvance();
 }
 
@@ -379,6 +385,7 @@ function answerQuiz(btn, encoded) {
     setTimeout(() => { currentIndex++; renderStudy(settings.animations); }, settings.animations ? 650 : 250);
   } else {
     wrong = true; btn.classList.add("wrong");
+    recordMistake(c, chosen);
     Sound.wrong();
     const correctBtn = [...document.querySelectorAll(".option")].find(b => b.dataset.value === c.es);
     correctBtn?.classList.add("correct");
@@ -391,8 +398,16 @@ function answerQuiz(btn, encoded) {
     const overlay = document.createElement("div");
     overlay.className = "wrong-overlay"; overlay.id = "wrongOverlay";
     document.body.appendChild(overlay);
-    document.getElementById("continueArea").innerHTML = `<button class="continue" onclick="continueWrong()">Continuar 🔔</button>`;
+    document.getElementById("continueArea").innerHTML = `<button class="continue" onclick="checkAnswer()">Check the right answer?</button>`;
   }
+}
+
+// After a mistake the card is NOT turned automatically: the user is asked
+// "Check the right answer?" and only then does the card turn over to show
+// the Spanish + English meaning. This is the only place a card ever turns.
+function checkAnswer() {
+  document.querySelector(".deck-card.current")?.classList.add("flipped");
+  document.getElementById("continueArea").innerHTML = `<button class="continue" onclick="continueWrong()">Continuar 🔔</button>`;
 }
 
 // Step 1 of recovering from a wrong answer: removes the dim overlay +
@@ -491,6 +506,7 @@ function playClick() {
 // no deck stack on screen (e.g. called from somewhere unexpected),
 // skips straight to the celebration.
 function finishStackEnding() {
+  if (currentMode === "quiz") commitMistakes();
   const stack = document.getElementById("deckStack");
   if (!stack) { Sound.finishCelebration(); showNote(); return; }
   stack.classList.add("end-2");
@@ -524,6 +540,44 @@ function burstEnd() {
     x.style.setProperty("--r", (Math.random() * 720 - 360) + "deg");
     root.appendChild(x);
   }
+}
+
+// ---------------------------------------------------------------------
+// MISTAKES — "Review all Your Mistakes?"
+// ---------------------------------------------------------------------
+// The mistakes of the LAST FINISHED Examen. Each finished Examen replaces
+// the list (so it updates when the user takes the exam again). `done`
+// becomes true after the first finished Examen and is what makes the
+// "Review all Your Mistakes?" option appear on the main menu.
+let mistakeData = ls("sigamosMistakes") || { done: false, list: [] };
+let runMistakes = [];      // mistakes of the Examen currently in progress: [{id, chosen}]
+
+function saveMistakes() {
+  try { localStorage.setItem("sigamosMistakes", JSON.stringify(mistakeData)); } catch (e) { /* storage full/disabled */ }
+}
+function recordMistake(card, chosen) {
+  if (!runMistakes.some(m => m.id === card.id)) runMistakes.push({ id: card.id, chosen });
+}
+function commitMistakes() {
+  mistakeData = { done: true, list: runMistakes };
+  saveMistakes();
+}
+function openMistakes() { Sound.pageForward(); renderMistakes(); }
+
+function renderMistakes() {
+  const items = mistakeData.list.map(m => ({ m, c: cards.find(x => x.id === m.id) })).filter(x => x.c);
+  app.innerHTML = `<section class="mistakes-screen">
+  <div class="topbar"><button class="back" onclick="goHome()">← Inicio</button><h2>Your Mistakes</h2><div class="progress">${items.length}</div></div>
+  ${items.length ? `<div class="mistake-list">${items.map(({ m, c }) => `
+    <article class="mistake-card">
+      <img src="${c.image}" alt="${esc(c.es)}">
+      <div class="mk-chose"><span>You chose</span> <s>${esc(m.chosen)}</s></div>
+      <div class="mk-right"><span>Right answer</span> <strong>${esc(c.es)}</strong></div>
+      <div class="mk-en">${esc(c.en)}</div>
+    </article>`).join("")}</div>`
+  : `<div class="mistake-empty"><div id="endBurst" class="burst"></div><div class="picudo">Que Picudo!</div><p>You don’t have anymore mistakes. You’ll pass this test 100%!</p></div>`}
+ </section>`;
+  if (!items.length && settings.animations) setTimeout(() => burstEnd(), 80);
 }
 
 // ---------------------------------------------------------------------
@@ -585,13 +639,18 @@ function fitLetterText(stage) {
   fit(".s-back .ptext", "--fs2");
 }
 
-// Tapping the envelope. Timeline (seconds):
+// Tapping the envelope. Timeline (see LETTER_T below):
 //   0.0–1.2  envelope flies to the middle and grows, screen dims, Araw-Araw starts
-//   1.4–2.8  flap opens slowly
-//   3.0–5.4  folded paper slides out (paper sound)
-//   5.6–6.9  envelope falls away beneath while the paper settles at reading size
-//   then     tap the folded paper → it unfolds (paper-opening sound)
-//   then     tap again / "turn the page around!" → flips (ruffling sound) to the rest
+//   1.3–2.4  flap opens (paper-slide sound)
+//   2.5–5.1  folded paper is taken out (book-paging sound)
+//   5.2–6.3  envelope falls away beneath while the paper settles at reading size
+//   then     tap the folded paper → it unfolds (book-paging sound again)
+//   then     tap again / "turn the page around!" → turns over (page-turn sound)
+// Letter timing (seconds). The flap / paper / turn durations are the lengths
+// of the sound clips (paper-slide 1.09s, book-paging 2.61s, page-turn 0.45s)
+// so each animation lasts exactly as long as its sound.
+const LETTER_T = { fly: 1.2, flapStart: 1.3, flap: 1.09, slide: 2.61, settle: 1.1, unfold: 2.61, turn: 0.45, gap: 0.15 };
+
 function openLetter() {
   if (letterStage) return;
   const btn = document.getElementById("notifyBtn"); if (!btn) return;
@@ -603,10 +662,15 @@ function openLetter() {
   const sIn = Math.min(0.72 * Ew / PW, 0.8 * Eh / (PH / 2));      // folded paper scale inside envelope
   const rise = Eh / 2 + (PH / 2 * sIn) / 2 + 8;                   // how far it slides up to clear the envelope
 
+  const dSlide = LETTER_T.flapStart + LETTER_T.flap + LETTER_T.gap;   // paper starts coming out
+  const dSettle = dSlide + LETTER_T.slide + 0.1;                       // envelope falls / paper settles
   const st = document.createElement("div");
   st.className = "letter-stage";
   st.style.cssText = `--sx:${icon.left + icon.width / 2 - vw / 2}px;--sy:${icon.top + icon.height / 2 - vh / 2}px;` +
-    `--s0:${icon.width / 200};--es:${es};--pw:${PW}px;--ph:${PH}px;--sin:${sIn};--rise:${rise}px;--fs1:24px;--fs2:24px`;
+    `--s0:${icon.width / 200};--es:${es};--pw:${PW}px;--ph:${PH}px;--sin:${sIn};--rise:${rise}px;--fs1:24px;--fs2:24px;` +
+    `--t-fly:${LETTER_T.fly}s;--d-flap:${LETTER_T.flapStart}s;--t-flap:${LETTER_T.flap}s;--d-flapz:${LETTER_T.flapStart + LETTER_T.flap / 2}s;` +
+    `--d-slide:${dSlide}s;--t-slide:${LETTER_T.slide}s;--d-settle:${dSettle}s;--t-settle:${LETTER_T.settle}s;` +
+    `--t-unfold:${LETTER_T.unfold}s;--t-turn:${LETTER_T.turn}s`;
   st.innerHTML = `
     <div class="letter-scrim"></div>
     <button class="letter-close" onclick="closeLetter()">← Cerrar</button>
@@ -634,8 +698,9 @@ function openLetter() {
 
   Sound.startLetterMusic();
   const at = (fn, ms) => letterTimers.push(setTimeout(fn, ms));
-  at(() => Sound.paperSlide(), 3000);
-  at(() => { const w = document.getElementById("paperWrap"); if (w) w.classList.add("ready"); }, 6900);
+  at(() => Sound.envelopeOpen(), LETTER_T.flapStart * 1000);
+  at(() => Sound.paperOut(), dSlide * 1000);
+  at(() => { const w = document.getElementById("paperWrap"); if (w) w.classList.add("ready"); }, (dSettle + LETTER_T.settle) * 1000);
 
   // Fit the handwriting once the handwritten font is available.
   const fitNow = () => letterStage === st && fitLetterText(st);
@@ -647,17 +712,17 @@ function openLetter() {
     if (!w.classList.contains("ready")) return;
     if (!w.classList.contains("opened")) { unfoldLetter(); return; }
     if (w.classList.contains("unfolding")) return;
-    Sound.paperRuffle();
+    Sound.letterTurn();
     document.getElementById("flipInner").classList.toggle("flipped");
   };
 }
 
-// Folded paper → open sheet (paper-opening sound), ~1.8s.
+// Folded paper → open sheet (book-paging sound, LETTER_T.unfold seconds).
 function unfoldLetter() {
   const w = document.getElementById("paperWrap");
   if (!w || w.classList.contains("opened")) return;
   w.classList.add("opened", "unfolding");
-  Sound.paperOpen();
+  Sound.paperOut();
   document.getElementById("foldShift").classList.add("unfold");
   document.getElementById("foldTop").classList.add("unfold");
   letterTimers.push(setTimeout(() => {
@@ -665,13 +730,14 @@ function unfoldLetter() {
     document.getElementById("flipper")?.classList.add("show");
     const fs = document.getElementById("foldShift"); if (fs) fs.style.display = "none";
     w.classList.remove("unfolding");
-  }, 1900));
+  }, (LETTER_T.unfold + 0.1) * 1000));
 }
 
 // Leaves the letter: the dim, Araw-Araw and every pending step stop; the
 // background music resumes. quiet=true is used when leaving via goHome().
 function closeLetter(quiet) {
   letterTimers.forEach(clearTimeout); letterTimers = [];
+  if (!quiet) Sound.pageBack();      // same chime as "← Inicio"
   Sound.stopPaper(); Sound.stopLetterMusic();
   letterStage?.remove(); letterStage = null;
   document.body.style.overflow = "";

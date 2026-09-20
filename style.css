@@ -196,10 +196,14 @@ button{cursor:pointer}
    applied directly via JS (tumble-out class) instead of relying on the
    generic .45s transition, so it reads as one deliberate fall instead
    of a fade. */
+/* No fade (a fading card turns into a pale/white wash over the deck): the card
+   tumbles all the way off the bottom of the screen at full opacity, and the
+   same card then slides back up as the last card of the deck. */
 @keyframes tumbleAway{
-  0%{transform:translateX(-50%) translateY(0) rotate(-1deg);opacity:1}
-  25%{transform:translateX(-50%) translateY(14px) rotate(9deg);opacity:1}
-  100%{transform:translateX(-50%) translateY(440px) rotate(78deg);opacity:0}
+  0%{transform:translateX(-50%) translateY(0) rotate(-1deg)}
+  25%{transform:translateX(-50%) translateY(14px) rotate(9deg)}
+  100%{transform:translateX(-50%) translateY(115vh) rotate(78deg)}
+}
 }
 .deck-card.current.tumble-out{animation:tumbleAway .56s cubic-bezier(.4,.05,.65,1) forwards;z-index:20}
 .deck-stack.end-2 .deck-card:nth-child(3){transform:translateX(-50%) rotate(-1deg) translateY(360px);opacity:0}
@@ -249,7 +253,7 @@ button{cursor:pointer}
 /* =====================================================================
    HOME: handwritten "Reseña o examen?" (replaces the two boxed buttons)
    ===================================================================== */
-.hero-sub{font-size:1.25rem;margin:2px 0 6px;color:#7a5c69}
+.hero-sub{font-size:.95rem;margin:2px 0 4px;color:#7a5c69}
 .mode-pick{
   margin-top:8px; font-family:"Caveat","Segoe Script","Bradley Hand",cursive;
   font-size:clamp(2.6rem,10vw,3.8rem); font-weight:700; line-height:1.1; color:#ff5f80;
@@ -268,27 +272,18 @@ button{cursor:pointer}
 /* =====================================================================
    DECK: smooth continuity between cards + working flip
    ===================================================================== */
-/* The new front card's face fades in as it straightens up instead of popping. */
-.deck-stack.advancing .deck-card.current .face.front{animation:faceIn .6s ease both}
-@keyframes faceIn{from{opacity:0}to{opacity:1}}
 /* The card that tumbled off the bottom slides back up from below the screen
    as the last card of the deck; keep it from creating page scrollbars. */
 .app{overflow-y:clip}
 /* Tap-to-flip in Reseña (the class was being toggled but nothing styled it). */
 .deck-card.current{transform-style:preserve-3d}
 .deck-card.current.flipped{transform:translateX(-50%) rotate(var(--rot)) translateY(var(--y)) rotateY(180deg)}
-/* A flipped (answer-side) card that falls away: fading the whole card would
-   flatten its 3D flip and show mirrored text, so its border/background and
-   the two faces fade separately instead. */
 @keyframes tumbleAwayFlipped{
   0%{transform:translateX(-50%) translateY(0) rotate(-1deg) rotateY(180deg)}
   25%{transform:translateX(-50%) translateY(14px) rotate(9deg) rotateY(180deg)}
-  100%{transform:translateX(-50%) translateY(440px) rotate(78deg) rotateY(180deg);
-       border-color:transparent;background-color:transparent;box-shadow:0 0 0 transparent}
+  100%{transform:translateX(-50%) translateY(115vh) rotate(78deg) rotateY(180deg)}
 }
-@keyframes faceFade{0%,25%{opacity:1}100%{opacity:0}}
 .deck-card.current.flipped.tumble-out{animation-name:tumbleAwayFlipped}
-.deck-card.current.flipped.tumble-out .face{animation:faceFade .56s linear forwards}
 
 /* =====================================================================
    MENSAJITOS: jumping envelope notification
@@ -333,7 +328,7 @@ button{cursor:pointer}
 .flap{position:absolute;left:0;top:0;width:200px;height:68px;transform-origin:50% 0;transform-style:preserve-3d}
 .flap i{position:absolute;inset:0;display:block;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .flap-f{background:linear-gradient(#fff8ee,#ffeedb);clip-path:polygon(0 0,100% 0,50% 100%)}
-.flap-b{background:#e5809f;clip-path:polygon(0 0,100% 0,50% 100%);transform:rotateX(180deg)}
+.flap-b{background:#e5809f;clip-path:polygon(0 100%,100% 100%,50% 0);transform:rotateX(180deg)}
 .flap .seal{
   inset:auto!important;left:50%!important;top:100%!important;right:auto!important;bottom:auto!important;width:28px;height:28px;margin:-20px 0 0 -14px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#ff6f8b,#d81e45);color:#fff;font-style:normal;
@@ -357,7 +352,7 @@ button{cursor:pointer}
 .env-part{
   position:absolute;left:50%;top:50%;width:200px;height:136px;margin:-68px 0 0 -100px;
   transform:translate(var(--sx),var(--sy)) scale(var(--s0));
-  animation:envFly 1.2s cubic-bezier(.4,0,.2,1) forwards, envFall 1.3s cubic-bezier(.5,0,.9,.6) 5.6s forwards;
+  animation:envFly var(--t-fly) cubic-bezier(.4,0,.2,1) forwards, envFall var(--t-settle) cubic-bezier(.5,0,.9,.6) var(--d-settle) forwards;
   filter:drop-shadow(0 10px 14px rgba(120,40,70,.28));
 }
 @keyframes envFly{from{transform:translate(var(--sx),var(--sy)) scale(var(--s0))}to{transform:translate(0,0) scale(var(--es))}}
@@ -365,9 +360,9 @@ button{cursor:pointer}
 .ep-back{z-index:1}
 .ep-front{z-index:3}
 .ep-flap{z-index:4;perspective:700px;perspective-origin:50% 0;
-  animation:envFly 1.2s cubic-bezier(.4,0,.2,1) forwards, envFall 1.3s cubic-bezier(.5,0,.9,.6) 5.6s forwards, flapZ .01s linear 2.1s forwards}
+  animation:envFly var(--t-fly) cubic-bezier(.4,0,.2,1) forwards, envFall var(--t-settle) cubic-bezier(.5,0,.9,.6) var(--d-settle) forwards, flapZ .01s linear var(--d-flapz) forwards}
 @keyframes flapZ{to{z-index:1}}
-.ep-flap .flap{animation:flapOpen 1.4s cubic-bezier(.45,0,.3,1) 1.4s forwards}
+.ep-flap .flap{animation:flapOpen var(--t-flap) cubic-bezier(.45,0,.3,1) var(--d-flap) forwards}
 @keyframes flapOpen{from{transform:rotateX(0)}to{transform:rotateX(180deg)}}
 
 /* the folded paper: hidden inside the envelope, slides out, then settles at reading size */
@@ -375,7 +370,7 @@ button{cursor:pointer}
   position:absolute;left:50%;top:50%;width:var(--pw);height:var(--ph);
   margin-left:calc(var(--pw) / -2);margin-top:calc(var(--ph) / -2);z-index:2;
   transform:translateY(0) scale(var(--sin));
-  animation:paperSlide 2.4s cubic-bezier(.45,0,.3,1) 3s forwards, paperSettle 1.3s cubic-bezier(.4,0,.2,1) 5.6s forwards, paperZ .01s linear 5.6s forwards;
+  animation:paperSlide var(--t-slide) cubic-bezier(.45,0,.3,1) var(--d-slide) forwards, paperSettle var(--t-settle) cubic-bezier(.4,0,.2,1) var(--d-settle) forwards, paperZ .01s linear var(--d-settle) forwards;
   pointer-events:none;
 }
 .paper-wrap.ready{pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -389,7 +384,7 @@ button{cursor:pointer}
   box-shadow:0 2px 3px rgba(90,60,40,.18),0 12px 22px rgba(90,40,60,.3);
 }
 .fold-shift{position:absolute;inset:0;transform:translateY(-25%);perspective:1700px;
-  transition:transform 1.8s cubic-bezier(.45,0,.25,1)}
+  transition:transform var(--t-unfold,2.6s) cubic-bezier(.45,0,.25,1)}
 .fold-shift.unfold{transform:translateY(0)}
 .paper-half{position:absolute;left:0;width:100%;height:50%}
 .paper-half.bottom{top:50%;overflow:hidden;border-radius:0 0 5px 5px}
@@ -398,7 +393,7 @@ button{cursor:pointer}
   content:"";position:absolute;left:0;right:0;top:0;height:14px;z-index:2;
   background:linear-gradient(rgba(120,80,60,.16),transparent)}
 .paper-half.top{top:0;transform-origin:50% 100%;transform:rotateX(-180deg);transform-style:preserve-3d;
-  transition:transform 1.8s cubic-bezier(.45,0,.25,1)}
+  transition:transform var(--t-unfold,2.6s) cubic-bezier(.45,0,.25,1)}
 .paper-half.top.unfold{transform:rotateX(0)}
 .half-in,.half-out{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .half-in{overflow:hidden;border-radius:5px 5px 0 0}
@@ -414,7 +409,7 @@ button{cursor:pointer}
 
 .flipper{position:absolute;inset:0;perspective:1600px;visibility:hidden}
 .flipper.show{visibility:visible}
-.flip-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1.1s cubic-bezier(.4,.1,.2,1)}
+.flip-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform var(--t-turn,.45s) cubic-bezier(.4,.1,.2,1)}
 .flip-inner.flipped{transform:rotateY(180deg)}
 .sheet{position:absolute;inset:0;border-radius:5px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .s-back{transform:rotateY(180deg)}
@@ -433,3 +428,42 @@ button{cursor:pointer}
 .ptext p{margin:0 0 .8em}
 .ptext .te-amo{font-weight:700;color:#ff4f79;font-size:1.25em;line-height:1.15;margin-top:1em;text-align:center}
 .turn-hint{flex:none;text-align:center;font-size:1.35rem;font-weight:700;color:#ff5f80;padding-top:6px}
+
+
+/* =====================================================================
+   HOME layout: options centered, scroll hint pinned toward the bottom
+   ===================================================================== */
+.hero{justify-content:space-between!important}
+.hero-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%}
+.scroll-hint{margin:0!important;padding:14px 12px calc(10px + env(safe-area-inset-bottom,0px))}
+.mistakes-link{
+  margin-top:14px;border:0;background:none;cursor:pointer;padding:2px 6px;
+  font-family:"Caveat","Segoe Script","Bradley Hand",cursive;font-size:clamp(1.7rem,6.5vw,2.3rem);font-weight:700;
+  color:#b06a86;text-decoration:underline wavy #f3c1d1;text-decoration-thickness:2px;text-underline-offset:.16em;
+  transition:transform .2s,color .2s;
+}
+.mistakes-link:hover,.mistakes-link:focus-visible{transform:rotate(-2deg) scale(1.06);color:#e0457a;outline:none}
+
+/* =====================================================================
+   REVIEW: solid card (Spanish + English together), no turning
+   ===================================================================== */
+.deck-card .mini-inner{background-color:#fff!important}
+/* growing card on a mistake (this rule used to lose to .deck-card's transform) */
+.deck-card.current.wrong-state{transform:translateX(-50%) rotate(var(--rot)) translateY(var(--y)) scale(1.12)}
+.deck-card.current.flipped.wrong-state{transform:translateX(-50%) rotate(var(--rot)) translateY(var(--y)) scale(1.12) rotateY(180deg)}
+
+/* =====================================================================
+   MISTAKES page
+   ===================================================================== */
+.mistakes-screen{padding-bottom:40px}
+.mistake-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;padding:6px 14px 20px;max-width:900px;margin:0 auto}
+.mistake-card{background:#fff;border:4px solid #ffc0d0;border-radius:22px;padding:12px;text-align:center;box-shadow:0 8px 18px rgba(200,80,120,.14)}
+.mistake-card img{width:100%;max-height:150px;object-fit:contain;border-radius:12px}
+.mk-chose,.mk-right{font-size:.92rem;margin-top:8px;line-height:1.25}
+.mk-chose span,.mk-right span{display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#a58a97}
+.mk-chose s{color:#e0455f;text-decoration-thickness:2px}
+.mk-right strong{color:#2f9b62}
+.mk-en{margin-top:4px;color:#8a7480;font-size:.88rem}
+.mistake-empty{position:relative;text-align:center;padding:12vh 24px 0}
+.picudo{font-family:"Luckiest Guy","Baloo 2",sans-serif;font-size:clamp(2.8rem,14vw,4.6rem);color:#ff6f91;text-shadow:3px 4px 0 #ffd0dc;line-height:1.05}
+.mistake-empty p{margin:14px auto 0;max-width:22rem;font-size:1.2rem;color:#6d5460}
