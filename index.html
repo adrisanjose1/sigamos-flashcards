@@ -146,6 +146,35 @@ let wrong = false;        // true while a wrong quiz answer is being shown
 let flipped = false;      // (currently unused flag — flip state lives on the DOM node's class instead)
 let cycleIndex = 0;       // which color (red/yellow/blue) is currently "front" — see COLOR_CYCLE below
 
+// ---------------------------------------------------------------------
+// DEVELOPER MODE — hidden toggle for quickly testing end-of-session
+// screens (results / Challenge summary / end animation) without having
+// to click through every card. Tap the "↓ Baja para agregar..." hint
+// on the home screen 5 times in a row to flip it on/off.
+// ---------------------------------------------------------------------
+let devMode = false;
+let devClicks = 0;
+let devClickTimer = null;
+
+function devModeClick() {
+  devClicks++;
+  clearTimeout(devClickTimer);
+  devClickTimer = setTimeout(() => { devClicks = 0; }, 1500); // taps must be reasonably close together
+  if (devClicks >= 5) {
+    devClicks = 0;
+    devMode = !devMode;
+    showDevToast(devMode);
+  }
+}
+
+function showDevToast(on) {
+  const t = document.createElement("div");
+  t.className = "dev-toast";
+  t.textContent = on ? "🛠️ Developer Mode: ON" : "🛠️ Developer Mode: OFF";
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1600);
+}
+
 // The 3 deck-card colors, in cycle order. cycleIndex%3 is always the
 // front/current card's color; the other two follow in this order.
 const COLOR_CYCLE = ["c-red", "c-yellow", "c-blue"];
@@ -190,7 +219,7 @@ function renderHome() {
      ${progress.challengeUnlocked ? `<button class="challenge-btn" onclick="start('challenge')">🔥 Challenge Mode 🔥</button>` : ""}
      ${mistakeData.done ? `<button class="mistakes-link" onclick="openMistakes()">Review all Your Mistakes?</button>` : ""}
    </div>
-   <div class="scroll-hint">↓ Baja para agregar más tarjetas y more for you to see 😉</div>
+   <div class="scroll-hint" onclick="devModeClick()">↓ Baja para agregar más tarjetas y more for you to see 😉</div>
  </section>
  <section class="controls" id="controls">
    <h2>Personaliza tu estudio 💕</h2>
@@ -290,11 +319,37 @@ function start(mode) {
   sessionCards = [...cards].sort(() => Math.random() - 0.5);
   wrong = false; flipped = false;
   cleanupRun();
-  if (mode !== "review") { runMistakes = []; runCorrect = 0; runAnswered = 0; }
+    if (mode !== "review") { runMistakes = []; runCorrect = 0; runAnswered = 0; }
+  if (devMode && sessionCards.length > 1) devFastForward(mode);
   Sound.pageForward();
   if (mode === "challenge") document.body.classList.add("challenge");
   renderStudy();
   if (mode !== "review") beginIntro(mode);   // FNF countdown, then Dudu (Examen) / hell fire (Challenge)
+}
+
+// Developer Mode: resolves every card except the last one as if the
+// user had tapped "Siguiente" through Reseña, or answered each Examen
+// / Challenge question (randomly right or wrong, with the same score/
+// mistake bookkeeping a real answer would leave behind), then jumps
+// straight to the very last card of the session, ready to finish
+// normally from there.
+function devFastForward(mode) {
+  const last = sessionCards.length - 1;
+  for (let i = 0; i < last; i++) {
+    if (mode !== "review") {
+      const c = sessionCards[i];
+      runAnswered++;
+      if (Math.random() < 0.5) {
+        runCorrect++;
+      } else {
+        const opts = c.auto ? autoChoices(c) : (c.choices || []);
+        const wrongChoice = opts.find(o => o !== c.es) || "";
+        recordMistake(c, wrongChoice);
+      }
+    }
+    cycleIndex++;
+  }
+  currentIndex = last;
 }
 
 // Renders one card of the current review/quiz session, plus a 3-card

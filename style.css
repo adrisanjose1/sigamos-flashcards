@@ -204,7 +204,7 @@ button{cursor:pointer}
   25%{transform:translateX(-50%) translateY(14px) rotate(9deg)}
   100%{transform:translateX(-50%) translateY(115vh) rotate(78deg)}
 }
-}
+
 .deck-card.current.tumble-out{animation:tumbleAway 1.05s cubic-bezier(.42,.05,.75,.55) forwards;z-index:20}
 .deck-stack.end-2 .deck-card:nth-child(3){transform:translateX(-50%) rotate(-1deg) translateY(360px);opacity:0}
 .deck-stack.end-1 .deck-card:nth-child(2){transform:translateX(-50%) rotate(5deg) translateY(330px);opacity:0}
@@ -603,3 +603,10 @@ body.challenge{
 @keyframes lockShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px) rotate(-4deg)}40%{transform:translateX(9px) rotate(4deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
 .padlock{position:absolute;left:50%;top:50%;translate:-50% -46%;z-index:6;filter:drop-shadow(0 2px 3px rgba(60,30,40,.4))}
 .lock-msg{min-height:1.4em;margin-top:2px;font-size:1rem;color:#8a5a6d;text-align:center}
+
+/* =====================================================================
+   DEVELOPER MODE toast + hint affordance
+   ===================================================================== */
+.scroll-hint{cursor:pointer;user-select:none}
+.dev-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));translate:-50% 0;background:#2b2130;color:#fff;font-weight:700;font-size:.95rem;padding:10px 18px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.28);z-index:999;animation:devToastIn .25s ease}
+@keyframes devToastIn{from{opacity:0;translate:-50% 10px}to{opacity:1;translate:-50% 0}}
